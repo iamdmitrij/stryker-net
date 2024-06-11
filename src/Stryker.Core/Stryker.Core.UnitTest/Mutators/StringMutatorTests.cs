@@ -17,6 +17,25 @@ namespace Stryker.Core.UnitTest.Mutators
         }
 
         [Theory]
+        [InlineData(@"""""u8", @"""Stryker was here!""u8")]
+        [InlineData(@"""foo""u8", @"""""u8")]
+        public void ShouldMutateUtf8StringLiteral(string original, string expected)
+        {
+            var syntaxTree = CSharpSyntaxTree.ParseText($"var test = {original};");
+      
+            var literalExpression = syntaxTree.GetRoot().DescendantNodes().OfType<LiteralExpressionSyntax>().First();
+            var mutator = new StringMutator();
+
+            var result = mutator.ApplyMutations(literalExpression, null).ToList();
+
+            var mutation = result.ShouldHaveSingleItem();
+
+            mutation.ReplacementNode.ShouldBeOfType<LiteralExpressionSyntax>()
+                .Token.Text.ShouldBe(expected);
+            mutation.DisplayName.ShouldBe("String mutation");
+        }
+
+        [Theory]
         [InlineData("", "Stryker was here!")]
         [InlineData("foo", "")]
         public void ShouldMutate(string original, string expected)
